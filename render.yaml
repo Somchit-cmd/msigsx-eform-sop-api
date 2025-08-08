@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: msigsx-eform-sop-api
+    plan: free
+    region: singapore
+    envVars:
+      - key: PORT
+        generateValue: true
+      - key: DATABASE_URL
+        value: "postgresql://neondb_owner:npg_q8eX9NtuMUjy@ep-ancient-queen-a11j3nde-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+      - key: JWT_SECRET
+        generateValue: true
+    buildCommand: |
+      npm install
+      npx prisma generate
+    startCommand: node src/server.js
