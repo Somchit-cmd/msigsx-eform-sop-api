@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enum for User Roles
+enum Role {
+  CHIEF
+  MANAGER
+  SUPERVISOR
+  OFFICER
+  TRAINEE
+}
+
+// Enum for Department
+enum Department {
+  EXECUTIVE_OFFICE
+  HR
+  FINANCE_AND_ACCOUNTING
+  HEALTH_CLAIMS
+  NON_HEALTH_CLAIMS
+  LEGAL_AND_COMPLIANCE
+  SALES_AND_MARKETING
+  UNDERWRITING
+}
+
+// Enum for SOP Status
+enum SopStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+// User Model (for authentication and roles)
+model User {
+  id         Int        @id @default(autoincrement())
+  email      String     @unique
+  password   String
+  name       String
+  role       Role
+  department Department
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  // Relations
+  createdSops Sop[]      @relation("SopRequester")
+  approvals   Approval[]
+}
+
+// SOP (Standard Operating Procedure) Model
+model Sop {
+  id          Int        @id @default(autoincrement())
+  title       String
+  department  Department
+  version     String     @default("1.0")
+  status      SopStatus  @default(DRAFT)
+  steps       String?
+  attachments String? // Store file URLs (e.g., uploaded to storage)
+  notes       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  requester   User       @relation("SopRequester", fields: [requesterId], references: [id])
+  requesterId Int
+  approvals   Approval[]
+
+  @@index([status])
+  @@index([department])
+}
+
+// Approval Workflow Model
+model Approval {
+  id         Int      @id @default(autoincrement())
+  sopId      Int
+  sop        Sop      @relation(fields: [sopId], references: [id])
+  approver   User     @relation(fields: [approverId], references: [id])
+  approverId Int
+  role       Role // Approving role (e.g., Manager approves)
+  status     String // "Approved", "Rejected"
+  signature  String? // Store URL of signature image or typed name
+  comments   String?
+  timestamp  DateTime @default(now())
+
+  @@index([sopId])
+  @@index([approverId])
+}
